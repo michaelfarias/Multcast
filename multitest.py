@@ -1,29 +1,30 @@
 
 from mininet.cli import CLI
-from mininet.log import lg, info
+from mininet.log import setLogLevel
 from mininet.net import Mininet
-from mininet.node import OVSKernelSwitch
-from mininet.topolib import TreeTopo
+from mininet.topo import Topo
 
-def ifconfigTest( net ):
-    "Run ifconfig on all hosts in net."
-    hosts = net.hosts
-    for host in hosts:
-        info( host.cmd( 'ifconfig' ) )
+def runMultiLink():
+    "Create and run multiple link network"
+    topo = simpleMultiLinkTopo( n=2 )
+    net = Mininet( topo=topo )
+    net.start()
+    CLI( net )
+    net.stop()
+
+class simpleMultiLinkTopo( Topo ):
+    "Simple topology with multiple links"
+
+    def __init__( self, n, **kwargs ):
+        Topo.__init__( self, **kwargs )
+
+        h1, h2 = self.addHost( 'h1' ), self.addHost( 'h2' )
+        s1 = self.addSwitch( 's1' )
+
+        for _ in range( n ):
+            self.addLink( s1, h1 )
+            self.addLink( s1, h2 )
 
 if __name__ == '__main__':
-    lg.setLogLevel( 'info' )
-    info( "*** Initializing Mininet and kernel modules\n" )
-    OVSKernelSwitch.setup()
-    info( "*** Creating network\n" )
-    network = Mininet( TreeTopo( depth=2, fanout=2 ), switch=OVSKernelSwitch )
-    info( "*** Starting network\n" )
-    network.start()
-    info( "*** Running ping test\n" )
-    network.pingAll()
-    info( "*** Running ifconfig test\n" )
-    ifconfigTest( network )
-    info( "*** Starting CLI (type 'exit' to exit)\n" )
-    CLI( network )
-    info( "*** Stopping network\n" )
-    network.stop()
+    setLogLevel( 'info' )
+    runMultiLink()
